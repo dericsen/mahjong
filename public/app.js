@@ -5,10 +5,7 @@ const $ = (sel) => document.querySelector(sel);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 
 /* ---------------- tiles ---------------- */
-const HONOR_GLYPH = ['東', '南', '西', '北', '中', '發', ''];
 const HONOR_NAME = ['Timur', 'Selatan', 'Barat', 'Utara', 'Naga Merah', 'Naga Hijau', 'Naga Putih'];
-const FLOWER_GLYPH = ['梅', '蘭', '菊', '竹', '春', '夏', '秋', '冬'];
-const HONOR_LABEL = ['T', 'S', 'B', 'U', 'Mrh', 'Hjo', 'Pth']; // Latin fallback (works without CJK fonts)
 const FLOWER_NAME = ['Plum', 'Anggrek', 'Krisan', 'Bambu', 'Semi', 'Panas', 'Gugur', 'Dingin'];
 const SUIT_NAME = ['Karakter', 'Bulatan', 'Bambu'];
 const WIND_SHORT = ['Timur', 'Selatan', 'Barat', 'Utara'];
@@ -21,24 +18,14 @@ function tileName(k) {
 
 function tileEl(k, extra = '') {
   const t = el('div', 'tile ' + extra);
+  if (k === null || k === undefined) { t.classList.add('back'); return t; }
   t.title = tileName(k);
-  if (k === null || k === undefined) { t.classList.add('back'); t.title = ''; return t; }
-  if (k < 27) {
-    const suit = Math.floor(k / 9), n = (k % 9) + 1;
-    t.classList.add('cdb'[suit]);
-    if (suit === 0) t.innerHTML = `<span class="n">${n}</span><span class="s">kar</span>`;
-    else if (suit === 1) t.innerHTML = `<span class="n">${n}</span><span class="s">bul</span>`;
-    else t.innerHTML = `<span class="n">${n}</span><span class="s">bam</span>`;
-  } else if (k < 34) {
-    const h = k - 27;
-    if (h === 4) t.classList.add('red');
-    if (h === 5) t.classList.add('green');
-    if (h === 6) t.classList.add('white');
-    t.innerHTML = `<span class="h">${HONOR_GLYPH[h]}</span><span class="lbl">${HONOR_LABEL[h]}</span>`;
-  } else {
-    t.classList.add('flower');
-    t.innerHTML = `<span class="h">${FLOWER_GLYPH[k - 34]}</span><span class="lbl">${k < 38 ? 'Bg' : 'Ms'}${((k - 34) % 4) + 1}</span>`;
-  }
+  if (k < 9) t.classList.add('suit-k');
+  else if (k < 18) t.classList.add('suit-d');
+  else if (k < 27) t.classList.add('suit-b');
+  else if (k < 34) t.classList.add('honor');
+  else t.classList.add('flower');
+  t.innerHTML = `<svg class="face" viewBox="0 0 60 84" aria-hidden="true">${window.MJ_TILE_ART(k)}</svg>`;
   return t;
 }
 
@@ -144,8 +131,8 @@ function renderRoom() {
   list.innerHTML = '';
   L.seats.forEach((s, i) => {
     const li = el('li');
-    if (!s) li.innerHTML = '<span class="empty">(kosong — akan diisi bot)</span>';
-    else li.innerHTML = `${escapeHtml(s.name)}${i === L.you ? ' <b>(kamu)</b>' : ''}<span class="dot ${s.connected ? 'on' : ''}"></span>`;
+    if (!s) li.innerHTML = `<span class="num">${i + 1}</span><span class="empty">Kosong — akan diisi bot</span>`;
+    else li.innerHTML = `<span class="num">${i + 1}</span>${escapeHtml(s.name)}${i === L.you ? ' <b>(kamu)</b>' : ''}<span class="dot ${s.connected ? 'on' : ''}"></span>`;
     list.appendChild(li);
   });
   $('#btn-start').classList.toggle('hidden', !L.isHost);
@@ -164,19 +151,27 @@ function render() {
 
 const pos = (g, seat) => (seat - g.you + 4) % 4; // 0 = me, 1 = right, 2 = top, 3 = left
 
+const WIND_GLYPH = ['DONG', 'NAN', 'XI', 'BEI'];
+function windSvg(name, color) { return `<svg class="wind-g" viewBox="0 0 70 70">${window.MJ_GLYPH(name, color, 13, 13, 44)}</svg>`; }
 function playerHeader(g, p) {
-  const wind = WIND_SHORT[p.seatWind - 27];
   const dealer = p.seat === g.dealer;
   const connected = state.lobby.seats[p.seat]?.connected;
-  return `<div class="pname"><span class="wind ${dealer ? 'dealer' : ''}" title="${dealer ? 'Dealer' : ''}">${wind}</span>` +
-    `${escapeHtml(p.name)}${p.bot ? ' (bot)' : connected ? '' : ' (offline)'}<span class="score">${p.score >= 0 ? '+' : ''}${p.score}</span></div>`;
+  const scoreCls = p.score > 0 ? 'pos' : p.score < 0 ? 'neg' : '';
+  const tag = p.bot ? '<span class="bot-tag">bot</span>' : connected ? '' : '<span class="bot-tag">offline</span>';
+  const windGlyph = windSvg(WIND_GLYPH[p.seatWind - 27], dealer ? '#fff' : '#e9e2d2');
+  return `<div class="pname"><span class="wind ${dealer ? 'dealer' : ''}" title="Angin ${WIND_SHORT[p.seatWind - 27]}${dealer ? ' · Dealer' : ''}">${windGlyph}</span>` +
+    `<span>${escapeHtml(p.name)}</span>${tag}<span class="score ${scoreCls}">${p.score >= 0 ? '+' : ''}${p.score}</span></div>`;
 }
 
 function renderGame(g) {
   const me = g.you >= 0 ? g.players[g.you] : null;
-  // info
-  $('#info').innerHTML = `Angin ronde: <b>${WIND_SHORT[g.prevalentWind - 27]}</b> · Tangan <b>${g.handIndex + 1}/${g.handsPerGame}</b> · ` +
-    `Sisa tembok: <b>${g.wallRemaining}</b> · Giliran: <b>${escapeHtml(g.players[g.current]?.name || '-')}</b> <span class="timer" id="timer"></span>`;
+  // info bar
+  $('#info').innerHTML =
+    `<span class="chip">Ronde <b>${WIND_SHORT[g.prevalentWind - 27]}</b></span><span class="sep"></span>` +
+    `<span class="chip">Tangan <b>${g.handIndex + 1}/${g.handsPerGame}</b></span><span class="sep"></span>` +
+    `<span class="chip">Tembok <b>${g.wallRemaining}</b></span><span class="sep"></span>` +
+    `<span class="chip">Giliran <b>${escapeHtml(g.players[g.current]?.name || '-')}</b></span>` +
+    `<span class="timer" id="timer"></span>`;
 
   // opponents
   for (const p of g.players) {
@@ -192,8 +187,8 @@ function renderGame(g) {
     box.classList.toggle('active', g.current === p.seat && g.phase === 'turn');
     box.innerHTML = playerHeader(g, p);
     const melds = el('div', 'melds');
-    p.melds.forEach((m) => melds.appendChild(meldEl(m, 'tiny')));
-    if (p.flowers.length) { const f = el('span', 'flowers'); p.flowers.forEach((t) => f.appendChild(tileEl(t, 'tiny'))); melds.appendChild(f); }
+    p.melds.forEach((m) => melds.appendChild(meldEl(m, 'small')));
+    if (p.flowers.length) { const f = el('span', 'flowers'); p.flowers.forEach((t) => f.appendChild(tileEl(t, 'small'))); melds.appendChild(f); }
     box.appendChild(melds);
     const backs = el('div', 'backs');
     if (p.hand) p.hand.forEach((t) => backs.appendChild(tileEl(t, 'tiny')));
@@ -239,9 +234,9 @@ function renderGame(g) {
   const w = $('#my-waits');
   w.innerHTML = '';
   if (g.waits && g.waits.length) {
-    w.append('Menunggu (bentuk tangan): ');
+    w.appendChild(el('span', 'label', 'Menunggu'));
     g.waits.forEach((t) => w.appendChild(tileEl(t, 'tiny wait')));
-    w.append(' — ingat: perlu minimal 8 poin');
+    w.appendChild(el('span', 'label', '· butuh ≥ 8 poin'));
   }
 
   renderActions(g);
@@ -276,7 +271,7 @@ function renderActions(g) {
   }
   if (o.kind === 'claim' || o.kind === 'rob') {
     const lbl = el('span', 'claim-tile');
-    lbl.append(o.kind === 'rob' ? 'Rampok Kong? ' : 'Buangan: ');
+    lbl.append(o.kind === 'rob' ? 'Rampok Kong?' : 'Buangan');
     lbl.appendChild(tileEl(o.tile, 'small'));
     box.appendChild(lbl);
     if (o.win) btn('MAHJONG!', 'win', () => act({ type: 'win' }));
@@ -290,10 +285,14 @@ function renderActions(g) {
   }
 }
 
+let lastLogLen = 0;
 function renderLog(g) {
   const log = $('#log');
-  log.innerHTML = '<b>Log</b>';
-  g.log.slice().reverse().forEach((m) => log.appendChild(el('div', '', escapeHtml(m))));
+  log.innerHTML = '<h4>Riwayat</h4>';
+  const lines = g.log.slice().reverse();
+  const fresh = g.log.length > lastLogLen ? g.log.length - lastLogLen : 0;
+  lines.forEach((m, i) => log.appendChild(el('div', 'line' + (i < fresh && lastLogLen ? ' fresh' : ''), escapeHtml(m))));
+  lastLogLen = g.log.length;
 }
 
 function renderResult(g) {
@@ -304,40 +303,48 @@ function renderResult(g) {
   body.innerHTML = '';
   if (r.type === 'win') {
     const w = g.players[r.winner];
-    body.appendChild(el('h2', '', `🀄 ${escapeHtml(w.name)} MAHJONG! — ${r.total} poin`));
-    body.appendChild(el('p', '', r.selfDrawn ? 'Tsumo (tarik sendiri)' : `Dari buangan ${escapeHtml(g.players[r.from].name)}${r.robbingKong ? ' (merampok Kong)' : ''}`));
+    const banner = el('div', 'result-banner');
+    banner.appendChild(el('div', 'big', '🀄 Mahjong!'));
+    banner.appendChild(el('h2', '', escapeHtml(w.name)));
+    banner.appendChild(el('p', 'hint', r.selfDrawn ? 'Tsumo — tarik sendiri' : `Menang dari buangan ${escapeHtml(g.players[r.from].name)}${r.robbingKong ? ' (merampok Kong)' : ''}`));
+    body.appendChild(banner);
     const tbl = el('table', 'fans');
-    r.fans.forEach((f) => tbl.appendChild(el('tr', '', `<td>${escapeHtml(f.name)}${f.count > 1 ? ' ×' + f.count : ''}</td><td>${f.points * f.count}</td>`)));
-    tbl.appendChild(el('tr', '', `<td><b>Total</b></td><td>${r.total}</td>`));
+    r.fans.forEach((f) => tbl.appendChild(el('tr', '', `<td>${escapeHtml(f.name)}${f.count > 1 ? ' ×' + f.count : ''}</td><td>+${f.points * f.count}</td>`)));
+    tbl.appendChild(el('tr', 'total', `<td>Total</td><td>${r.total} poin</td>`));
     body.appendChild(tbl);
   } else {
-    body.appendChild(el('h2', '', 'Seri — tembok habis'));
+    const banner = el('div', 'result-banner');
+    banner.appendChild(el('div', 'big draw', 'Seri'));
+    banner.appendChild(el('p', 'hint', 'Tembok habis — tidak ada pemenang'));
+    body.appendChild(banner);
   }
-  body.appendChild(el('h3', '', 'Tangan'));
+  body.appendChild(el('h3', '', 'Tangan pemain'));
   g.players.forEach((p) => {
     const row = el('div', 'reveal');
     const pay = r.payments[p.seat];
-    row.appendChild(el('span', 'label', `${escapeHtml(p.name)} <span class="${pay > 0 ? 'pos' : pay < 0 ? 'neg' : ''}">${pay > 0 ? '+' : ''}${pay}</span>`));
+    const lbl = el('span', 'label');
+    lbl.innerHTML = `${escapeHtml(p.name)} <span class="pay ${pay > 0 ? 'pos' : pay < 0 ? 'neg' : ''}">${pay > 0 ? '+' : ''}${pay}</span>`;
+    row.appendChild(lbl);
     p.melds.forEach((m) => row.appendChild(meldEl(m, 'tiny')));
     (p.hand || []).forEach((t) => row.appendChild(tileEl(t, 'tiny' + (r.type === 'win' && p.seat === r.winner && t === r.tile ? ' last' : ''))));
     body.appendChild(row);
   });
   if (g.gameOver) {
     const ranking = g.players.slice().sort((a, b) => b.score - a.score);
-    body.appendChild(el('h3', '', 'Permainan selesai — Klasemen'));
-    const ol = el('ol');
-    ranking.forEach((p) => ol.appendChild(el('li', '', `${escapeHtml(p.name)}: ${p.score}`)));
+    body.appendChild(el('h3', '', '🏆 Permainan selesai — Klasemen'));
+    const ol = el('ol', 'rank-list');
+    ranking.forEach((p) => { const li = el('li'); li.innerHTML = `${escapeHtml(p.name)}<span class="pts">${p.score >= 0 ? '+' : ''}${p.score}</span>`; ol.appendChild(li); });
     body.appendChild(ol);
     if (state.lobby.isHost) {
-      const b = el('button', 'primary', 'Main lagi');
+      const b = el('button', 'primary block', 'Main lagi');
       b.onclick = () => api(`/api/room/${roomCode}/start`, {}).catch((e) => toast(e.message));
       body.appendChild(b);
     }
   } else if (g.options && g.options.kind === 'next') {
-    const b = el('button', 'primary', 'Lanjut ke tangan berikutnya');
+    const b = el('button', 'primary block', 'Lanjut ke tangan berikutnya ');
     b.onclick = () => act({ type: 'next' });
+    b.appendChild(el('span', 'timer', '')).id = 'timer2';
     body.appendChild(b);
-    body.appendChild(el('span', 'timer', ' <span id="timer2"></span>'));
   } else {
     body.appendChild(el('p', 'hint', 'Menunggu pemain lain…'));
   }
@@ -358,6 +365,8 @@ function startTimer(deadline) {
 
 /* ---------------- boot ---------------- */
 (function boot() {
+  const logo = $('#logo-tile');
+  if (logo) logo.innerHTML = window.MJ_TILE_ART(4); // 5 of characters as the brand mark
   const params = new URLSearchParams(location.search);
   const code = (params.get('room') || '').toUpperCase();
   if (!code) return show('home');

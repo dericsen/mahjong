@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mahjong Online — Aturan Resmi Tiongkok</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🀄</text></svg>" />
 </head>
@@ -11,15 +14,21 @@
   <!-- ============ LOBBY ============ -->
   <section id="screen-home" class="screen">
     <div class="card home-card">
-      <h1>🀄 Mahjong Online</h1>
-      <p class="subtitle">Aturan Resmi Tiongkok (Official International / MCR) · minimal 8 poin untuk menang</p>
-      <label>Nama kamu <input id="name" maxlength="20" placeholder="mis. Andi" /></label>
+      <div class="brand">
+        <div class="logo"><svg viewBox="0 0 60 84" width="34" height="40" id="logo-tile"></svg></div>
+        <div>
+          <h1>Mahjong Online</h1>
+          <p class="subtitle">Aturan Resmi Tiongkok (MCR) · minimal 8 poin untuk menang</p>
+        </div>
+      </div>
+      <label for="name">Nama kamu</label>
+      <input id="name" maxlength="20" placeholder="mis. Andi" />
       <div class="row">
-        <button id="btn-create" class="primary">Buat Room Baru</button>
+        <button id="btn-create" class="primary block">Buat Room Baru</button>
       </div>
       <div class="divider">atau gabung room</div>
       <div class="row">
-        <input id="join-code" maxlength="6" placeholder="Kode room (6 huruf)" />
+        <input id="join-code" maxlength="6" placeholder="KODE ROOM" />
         <button id="btn-join">Gabung</button>
       </div>
       <p id="home-error" class="error"></p>
@@ -42,10 +51,14 @@
   <section id="screen-room" class="screen hidden">
     <div class="card room-card">
       <h2>Room <span id="room-code" class="code"></span></h2>
-      <p>Bagikan link ini ke teman: <input id="share-link" readonly /> <button id="btn-copy">Salin</button></p>
+      <label>Bagikan link ini ke teman</label>
+      <div class="row">
+        <input id="share-link" readonly />
+        <button id="btn-copy">Salin</button>
+      </div>
       <ol id="seat-list" class="seat-list"></ol>
       <p class="hint">Kursi kosong akan diisi bot saat permainan dimulai.</p>
-      <button id="btn-start" class="primary hidden">Mulai Permainan</button>
+      <button id="btn-start" class="primary block hidden">Mulai Permainan</button>
       <p id="room-wait" class="hint hidden">Menunggu host memulai permainan…</p>
       <p id="room-error" class="error"></p>
     </div>
@@ -81,6 +94,8 @@
   <div id="modal" class="modal hidden"><div class="card modal-card" id="modal-body"></div></div>
   <div id="toast" class="toast hidden"></div>
 
+  <script src="/glyphs.js"></script>
+  <script src="/tiles-svg.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
