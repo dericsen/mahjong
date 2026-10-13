@@ -175,6 +175,7 @@ function flyDiscard(g, seat) {
   const tileKind = g.players[seat].discards.slice(-1)[0];
 
   const to = landed.getBoundingClientRect();
+  if (to.width === 0) return; // pile not laid out yet
   const sb = seatBox.getBoundingClientRect();
   // origin: from the edge of the discarder's seat, roughly where their hand is
   const from = {
@@ -182,14 +183,13 @@ function flyDiscard(g, seat) {
     y: ps === 2 ? sb.bottom + 6 : ps === 0 ? sb.top - 6 : sb.top + sb.height / 2,
   };
 
-  // hide the landed tile until the flight finishes
-  landed.style.visibility = 'hidden';
-
+  // Pure overlay flight: a clone flies on top and lands exactly on the real
+  // tile, which stays in place. No hide/unhide of the real tile, so a mid-flight
+  // re-render can never leave a tile stuck invisible.
   const layer = $('#fly-layer');
   const wrap = el('div', 'fly-tile');
   const inner = tileEl(tileKind);
   inner.classList.remove('last');
-  // match the pile tile size
   inner.style.setProperty('--tw', getComputedStyle(landed).getPropertyValue('--tw') || '24px');
   wrap.appendChild(inner);
   wrap.style.left = to.left + 'px';
@@ -202,19 +202,21 @@ function flyDiscard(g, seat) {
   const spin = (Math.random() * 60 + 40) * (Math.random() < 0.5 ? -1 : 1);
   const arc = -Math.max(40, Math.abs(dy) * 0.4); // lift at the midpoint
 
-  const anim = wrap.animate(
-    [
-      { transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(1.25)`, opacity: 0.2, offset: 0 },
-      { transform: `translate(${dx * 0.45}px, ${dy * 0.5 + arc}px) rotate(${spin * 0.4}deg) scale(1.18)`, opacity: 1, offset: 0.5 },
-      { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1, offset: 1 },
-    ],
-    { duration: 340, easing: 'cubic-bezier(.25,.7,.3,1)' },
-  );
-  anim.onfinish = anim.oncancel = () => {
-    landed.style.visibility = '';
-    landed.classList.add('landing');
-    wrap.remove();
-  };
+  const cleanup = () => wrap.remove();
+  let anim;
+  try {
+    anim = wrap.animate(
+      [
+        { transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(1.25)`, opacity: 0.3, offset: 0 },
+        { transform: `translate(${dx * 0.45}px, ${dy * 0.5 + arc}px) rotate(${spin * 0.4}deg) scale(1.18)`, opacity: 1, offset: 0.5 },
+        { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1, offset: 1 },
+      ],
+      { duration: 340, easing: 'cubic-bezier(.25,.7,.3,1)' },
+    );
+    anim.onfinish = anim.oncancel = cleanup;
+  } catch (_) { cleanup(); return; }
+  // hard safety: remove the clone no matter what after the duration
+  setTimeout(cleanup, 500);
 }
 
 /* Fly the claimed discard from the center to the claimer's meld area. */
@@ -302,6 +304,10 @@ function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&a
 /* ---------------- game ---------------- */
 function render() {
   if (!state) return;
+  // safety: clear any orphaned flight clones and un-hide stuck tiles from a
+  // previous animation before we (re)build the board
+  const layer = $('#fly-layer');
+  if (layer) layer.innerHTML = '';
   if (!state.game) return renderRoom();
   show('game');
   renderGame(state.game);

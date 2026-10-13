@@ -351,10 +351,10 @@ table.fans tr.total td:last-child { color: #fff; }
   100% { box-shadow: 0 0 0 1px var(--gold), 0 0 22px rgba(231, 180, 58, .35); }
 }
 
-/* drawn-tile entrance (preserve the 3D tilt) */
+/* drawn-tile entrance (preserve the 3D tilt; never fully transparent) */
 .hand .tile.drawn { animation: draw-in .32s cubic-bezier(.2, .8, .3, 1.3); }
 @keyframes draw-in {
-  from { opacity: 0; transform: rotateX(16deg) translateY(-20px) scale(.85); }
+  from { opacity: .35; transform: rotateX(16deg) translateY(-20px) scale(.85); }
   to { opacity: 1; transform: rotateX(16deg); }
 }
 
