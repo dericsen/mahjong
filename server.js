@@ -182,6 +182,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const parts = url.pathname.split('/').filter(Boolean);
   try {
+    if (url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
     if (parts[0] === 'api' && parts[1] === 'room') return await handleApi(req, res, parts, url);
     if (req.method === 'GET') return serveStatic(req, res, url.pathname);
     res.writeHead(405); res.end();
@@ -201,4 +202,4 @@ setInterval(() => {
   }
 }, 60_000).unref();
 
-server.listen(PORT, () => console.log(`Mahjong Online berjalan di http://localhost:${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Mahjong Online berjalan di http://localhost:${PORT}`));

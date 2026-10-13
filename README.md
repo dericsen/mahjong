@@ -38,6 +38,21 @@ Buka `http://localhost:3000`, isi nama, klik **Buat Room Baru**, bagikan link `/
 | `public/` | Klien browser (HTML/CSS/JS murni) |
 | `scripts/simulate.js` | Uji ketahanan: `node scripts/simulate.js 20` (bot vs bot, cek invarian jumlah tile dan skor zero-sum) |
 
+## Deploy gratis (tanpa kartu kredit) — Koyeb
+
+Game ini butuh server yang selalu hidup + koneksi realtime (SSE), jadi **tidak cocok** untuk Vercel/Netlify/GitHub Pages. Platform gratis yang **tidak meminta kartu kredit** saat daftar: **Koyeb**. (Render & Railway sering minta kartu untuk verifikasi; Fly.io sudah menghapus free tier-nya.)
+
+Langkah di Koyeb:
+1. Daftar di https://www.koyeb.com (bisa pakai akun GitHub, tanpa kartu kredit).
+2. **Create Service → GitHub** → pilih repo `dericsen/mahjong`.
+3. Builder: **Dockerfile** (otomatis terdeteksi dari `Dockerfile` di repo ini).
+4. Port: **3000**. Health check path: `/healthz`.
+5. Pilih instance **Free**, klik **Deploy**. Beberapa menit kemudian dapat URL publik `https://<nama>.koyeb.app`.
+
+Repo ini sudah berisi `Dockerfile` + `.dockerignore` + endpoint `/healthz`, dan server membaca `PORT` dari environment, jadi tidak ada konfigurasi tambahan yang perlu diubah.
+
+Alternatif gratis lain: **Google Cloud Run** dan **Oracle Cloud Always Free** (lebih teknis, dan tetap minta kartu untuk verifikasi di sebagian wilayah).
+
 ## Penyederhanaan dan catatan
 
 - Semua state disimpan di memori. Kalau server restart, room hilang.
