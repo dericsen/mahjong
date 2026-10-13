@@ -105,14 +105,20 @@ function reactToState(prev, next) {
   const discardKey = g.players.map((p) => p.discards.length).join(',');
   const flowerCount = g.players.reduce((a, p) => a + p.flowers.length, 0);
 
-  // new discard somewhere
-  if (fxSeen.discardKey !== null && discardKey !== fxSeen.discardKey) FX.play('discard');
+  // new discard somewhere -> sound + throw animation
+  if (fxSeen.discardKey !== null && discardKey !== fxSeen.discardKey) {
+    FX.play('discard');
+    const seat = whoDiscarded(prev, next);
+    if (seat >= 0) flyDiscard(next.game, seat);
+  }
   // a flower was drawn/replaced
   if (fxSeen.flowerCount && flowerCount > fxSeen.flowerCount) FX.play('flower');
   // a new meld (pung/chow/kong) formed
   if (fxSeen.melds !== null && meldCount > fxSeen.melds) {
-    const kong = g.players.some((p) => p.melds.some((m) => m.type === 'kong'));
-    FX.play(kong && meldCount - fxSeen.melds >= 1 ? 'kong' : 'claim');
+    const claim = whoClaimed(prev, next);
+    const kong = claim && claim.meld.type === 'kong';
+    FX.play(kong ? 'kong' : 'claim');
+    if (claim && !claim.meld.concealed) flyClaim(g, claim.seat, claim.meld.tile);
     pulseMeld();
   }
   // it just became my turn (and it wasn't before)
@@ -137,6 +143,104 @@ function flashTurn() {
   const b = $('.seat-bottom');
   if (!b) return;
   b.classList.remove('turn-flash'); void b.offsetWidth; b.classList.add('turn-flash');
+}
+
+/* which seat just gained a meld, and the new meld */
+function whoClaimed(prev, next) {
+  if (!prev || !prev.game) return null;
+  const a = prev.game.players, b = next.game.players;
+  for (let s = 0; s < 4; s++) {
+    if (b[s].melds.length > a[s].melds.length) return { seat: s, meld: b[s].melds[b[s].melds.length - 1] };
+  }
+  return null;
+}
+
+/* which seat discarded between two states (its discard pile grew by one) */
+function whoDiscarded(prev, next) {
+  if (!prev || !prev.game) return next.game.players.findIndex((p) => p.discards.length > 0) >= 0 ? -1 : -1;
+  const a = prev.game.players, b = next.game.players;
+  for (let s = 0; s < 4; s++) if (b[s].discards.length === a[s].discards.length + 1) return s;
+  return -1;
+}
+
+/* Throw the just-discarded tile from the discarder's seat to its spot in the pile. */
+function flyDiscard(g, seat) {
+  if (FX.reducedMotion && FX.reducedMotion()) return;
+  const ps = g.you >= 0 ? (seat - g.you + 4) % 4 : seat; // 0 me,1 right,2 top,3 left
+  const pile = document.querySelector(`.pile[data-pos="${ps}"]`);
+  if (!pile) return;
+  const landed = pile.querySelector('.tile:last-child');
+  const seatBox = ps === 0 ? $('.seat-bottom') : document.querySelector(`.seat[data-pos="${ps}"]`);
+  if (!landed || !seatBox) return;
+  const tileKind = g.players[seat].discards.slice(-1)[0];
+
+  const to = landed.getBoundingClientRect();
+  const sb = seatBox.getBoundingClientRect();
+  // origin: from the edge of the discarder's seat, roughly where their hand is
+  const from = {
+    x: ps === 1 ? sb.left - 10 : ps === 3 ? sb.right + 10 : sb.left + sb.width / 2,
+    y: ps === 2 ? sb.bottom + 6 : ps === 0 ? sb.top - 6 : sb.top + sb.height / 2,
+  };
+
+  // hide the landed tile until the flight finishes
+  landed.style.visibility = 'hidden';
+
+  const layer = $('#fly-layer');
+  const wrap = el('div', 'fly-tile');
+  const inner = tileEl(tileKind);
+  inner.classList.remove('last');
+  // match the pile tile size
+  inner.style.setProperty('--tw', getComputedStyle(landed).getPropertyValue('--tw') || '24px');
+  wrap.appendChild(inner);
+  wrap.style.left = to.left + 'px';
+  wrap.style.top = to.top + 'px';
+  wrap.style.width = to.width + 'px';
+  wrap.style.height = to.height + 'px';
+  layer.appendChild(wrap);
+
+  const dx = from.x - to.left, dy = from.y - to.top;
+  const spin = (Math.random() * 60 + 40) * (Math.random() < 0.5 ? -1 : 1);
+  const arc = -Math.max(40, Math.abs(dy) * 0.4); // lift at the midpoint
+
+  const anim = wrap.animate(
+    [
+      { transform: `translate(${dx}px, ${dy}px) rotate(${spin}deg) scale(1.25)`, opacity: 0.2, offset: 0 },
+      { transform: `translate(${dx * 0.45}px, ${dy * 0.5 + arc}px) rotate(${spin * 0.4}deg) scale(1.18)`, opacity: 1, offset: 0.5 },
+      { transform: 'translate(0,0) rotate(0) scale(1)', opacity: 1, offset: 1 },
+    ],
+    { duration: 340, easing: 'cubic-bezier(.25,.7,.3,1)' },
+  );
+  anim.onfinish = anim.oncancel = () => {
+    landed.style.visibility = '';
+    landed.classList.add('landing');
+    wrap.remove();
+  };
+}
+
+/* Fly the claimed discard from the center to the claimer's meld area. */
+function flyClaim(g, seat, tileKind) {
+  if (FX.reducedMotion && FX.reducedMotion()) return;
+  const ps = g.you >= 0 ? (seat - g.you + 4) % 4 : seat;
+  const dest = ps === 0 ? $('#my-melds') : document.querySelector(`.seat[data-pos="${ps}"] .melds`);
+  const center = $('#discards');
+  if (!dest || !center) return;
+  const c = center.getBoundingClientRect();
+  const d = dest.getBoundingClientRect();
+  const layer = $('#fly-layer');
+  const wrap = el('div', 'fly-tile');
+  wrap.appendChild(tileEl(tileKind, 'small'));
+  const sx = c.left + c.width / 2, sy = c.top + c.height / 2;
+  wrap.style.left = sx + 'px'; wrap.style.top = sy + 'px';
+  layer.appendChild(wrap);
+  const dx = d.left + 10 - sx, dy = d.top + 6 - sy;
+  const anim = wrap.animate(
+    [
+      { transform: 'translate(0,0) scale(1.3)', opacity: 1, offset: 0 },
+      { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 0.9, offset: 1 },
+    ],
+    { duration: 300, easing: 'cubic-bezier(.3,.6,.2,1)' },
+  );
+  anim.onfinish = anim.oncancel = () => wrap.remove();
 }
 function pulseMeld() {
   const last = document.querySelector('.seat .meld:last-child');

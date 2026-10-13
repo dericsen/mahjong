@@ -326,13 +326,11 @@ table.fans tr.total td:last-child { color: #fff; }
 }
 
 /* ======================= animations & effects ======================= */
-.pile .tile { animation: tile-fly .34s cubic-bezier(.2, .75, .3, 1.1); }
 @keyframes tile-fly {
   0% { opacity: 0; transform: translateY(-26px) scale(1.25) rotate(-6deg); }
   60% { opacity: 1; }
   100% { opacity: 1; transform: none; }
 }
-.pile .tile.last { animation: tile-fly .34s cubic-bezier(.2, .75, .3, 1.1); }
 .pile .tile.last::before { animation: last-glow 1.1s ease-in-out infinite .34s; }
 @keyframes last-glow {
   0%, 100% { box-shadow: 0 calc(var(--d) * 0.85) calc(var(--d) * 1.5) rgba(0, 0, 0, .5), 0 0 0 2px var(--gold), 0 0 10px rgba(231, 180, 58, .55); }
@@ -371,6 +369,13 @@ table.fans tr.total td:last-child { color: #fff; }
 .result-banner .big { background: linear-gradient(90deg, var(--gold), #fff, var(--gold)); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 2.2s linear infinite; }
 .result-banner .big.draw { background: none; -webkit-text-fill-color: #9fb4ab; color: #9fb4ab; animation: none; }
 @keyframes shimmer { to { background-position: -200% 0; } }
+
+/* flying tile (discard throw / claim grab) */
+#fly-layer { position: fixed; inset: 0; pointer-events: none; z-index: 28; overflow: visible; }
+.fly-tile { position: fixed; will-change: transform, opacity; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .5)); }
+.fly-tile .tile { margin: 0; }
+.pile .tile.landing { animation: tile-land .18s ease-out; }
+@keyframes tile-land { from { transform: scale(1.12); } to { transform: none; } }
 
 /* confetti canvas */
 .fx-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; transition: opacity .4s; }

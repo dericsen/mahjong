@@ -129,7 +129,9 @@ const FX = (() => {
     })(start);
   }
 
-  return { play, confetti, setMuted, isMuted, ensure };
+  const reducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  return { play, confetti, setMuted, isMuted, ensure, reducedMotion };
 })();
 
 window.FX = FX;
