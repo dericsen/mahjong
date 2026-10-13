@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mahjong Online — Aturan Resmi Tiongkok</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🀄</text></svg>" />
+</head>
+<body>
+  <!-- ============ LOBBY ============ -->
+  <section id="screen-home" class="screen">
+    <div class="card home-card">
+      <h1>🀄 Mahjong Online</h1>
+      <p class="subtitle">Aturan Resmi Tiongkok (Official International / MCR) · minimal 8 poin untuk menang</p>
+      <label>Nama kamu <input id="name" maxlength="20" placeholder="mis. Andi" /></label>
+      <div class="row">
+        <button id="btn-create" class="primary">Buat Room Baru</button>
+      </div>
+      <div class="divider">atau gabung room</div>
+      <div class="row">
+        <input id="join-code" maxlength="6" placeholder="Kode room (6 huruf)" />
+        <button id="btn-join">Gabung</button>
+      </div>
+      <p id="home-error" class="error"></p>
+      <details class="rules">
+        <summary>Cara main singkat</summary>
+        <ul>
+          <li>Tujuan: 4 set (Chow / Pung / Kong) + 1 pasang, dengan total minimal <b>8 poin</b>.</li>
+          <li><b>Chow</b> (urutan 3 suit sama) hanya dari buangan pemain di <b>kirimu</b>.</li>
+          <li><b>Pung</b> (3 sama) / <b>Kong</b> (4 sama) bisa dari buangan siapa saja.</li>
+          <li>Prioritas klaim: Mahjong &gt; Pung/Kong &gt; Chow.</li>
+          <li>Bunga &amp; Musim langsung disisihkan dan diganti, masing-masing +1 poin.</li>
+          <li>Menang dari buangan: tiap lawan bayar 8, pembuang bayar tambahan sebesar poin tangan. Tsumo (tarik sendiri): tiap lawan bayar poin + 8.</li>
+          <li>Klik tile sekali untuk memilih, klik lagi untuk membuang.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ WAITING ROOM ============ -->
+  <section id="screen-room" class="screen hidden">
+    <div class="card room-card">
+      <h2>Room <span id="room-code" class="code"></span></h2>
+      <p>Bagikan link ini ke teman: <input id="share-link" readonly /> <button id="btn-copy">Salin</button></p>
+      <ol id="seat-list" class="seat-list"></ol>
+      <p class="hint">Kursi kosong akan diisi bot saat permainan dimulai.</p>
+      <button id="btn-start" class="primary hidden">Mulai Permainan</button>
+      <p id="room-wait" class="hint hidden">Menunggu host memulai permainan…</p>
+      <p id="room-error" class="error"></p>
+    </div>
+  </section>
+
+  <!-- ============ GAME TABLE ============ -->
+  <section id="screen-game" class="screen hidden">
+    <div id="table">
+      <div class="seat seat-top" data-pos="2"></div>
+      <div class="seat seat-left" data-pos="3"></div>
+      <div class="seat seat-right" data-pos="1"></div>
+      <div id="center">
+        <div id="info"></div>
+        <div id="discards">
+          <div class="pile pile-top" data-pos="2"></div>
+          <div class="pile pile-left" data-pos="3"></div>
+          <div class="pile pile-right" data-pos="1"></div>
+          <div class="pile pile-bottom" data-pos="0"></div>
+        </div>
+      </div>
+      <div class="seat seat-bottom" data-pos="0">
+        <div id="my-header"></div>
+        <div id="my-melds" class="melds"></div>
+        <div id="my-hand" class="hand"></div>
+        <div id="my-waits"></div>
+        <div id="actions"></div>
+      </div>
+    </div>
+    <aside id="log"></aside>
+  </section>
+
+  <!-- ============ RESULT MODAL ============ -->
+  <div id="modal" class="modal hidden"><div class="card modal-card" id="modal-body"></div></div>
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
