@@ -18,7 +18,7 @@ function tileName(k) {
 
 function tileEl(k, extra = '') {
   const t = el('div', 'tile ' + extra);
-  if (k === null || k === undefined) { t.classList.add('back'); return t; }
+  if (k === null || k === undefined) { t.classList.add('back'); t.innerHTML = '<span class="bk"></span>'; return t; }
   t.title = tileName(k);
   if (k < 9) t.classList.add('suit-k');
   else if (k < 18) t.classList.add('suit-d');
@@ -273,6 +273,7 @@ function renderGame(g) {
   const addTile = (t, isDrawn, idx) => {
     const id = `${t}:${idx}`;
     const te = tileEl(t, (isDrawn ? 'drawn ' : '') + (selectedTile === id ? 'selected' : ''));
+    if (isDrawn) te.appendChild(el('span', 'tag', 'baru'));
     te.onclick = () => {
       if (!canDiscard) return;
       if (selectedTile === id) act({ type: 'discard', tile: t });

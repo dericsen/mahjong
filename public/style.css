@@ -121,46 +121,75 @@ button.win {
 .dot.on { background: var(--jade); box-shadow: 0 0 8px var(--jade); }
 
 /* ======================= tiles ======================= */
+/* A tile is a 3D block: .tile is the raised ivory top face; ::before is the
+   extruded side wall (thickness) + cast shadow; ::after is a gloss sweep.
+   --d is the depth, scaled with tile width. */
 .tile {
+  --d: calc(var(--tw) * 0.17);
+  --round: calc(var(--tw) * 0.17);
   position: relative; display: inline-block; vertical-align: bottom;
-  width: var(--tw); height: calc(var(--tw) * 1.38); margin: 1.5px;
-  border-radius: calc(var(--tw) * .16);
-  background: linear-gradient(158deg, var(--ivory-1) 0%, var(--ivory-2) 100%);
+  width: var(--tw); height: calc(var(--tw) * 1.34);
+  margin: 1.5px 1.5px calc(var(--d) + 2px);
+  border-radius: var(--round);
+  background:
+    radial-gradient(130% 85% at 30% 20%, rgba(255, 255, 255, .95), transparent 52%),
+    linear-gradient(158deg, var(--ivory-1) 0%, #f8f3e6 45%, var(--ivory-2) 100%);
   box-shadow:
-    inset 0 1px 0 #fff,
-    inset 0 calc(var(--tw) * -.08) 0 rgba(169, 154, 116, .25),
-    0 2px 1px rgba(255, 255, 255, .25),
-    0 calc(var(--tw) * .11) 0 var(--ivory-shadow),
-    0 calc(var(--tw) * .14) 7px rgba(0, 0, 0, .4);
-  overflow: hidden; user-select: none;
+    inset 0 1.5px 0 #fff,
+    inset 0 -1px 1px rgba(169, 154, 116, .35),
+    inset 2px 0 2px rgba(255, 255, 255, .5),
+    inset -2px 0 2px rgba(169, 154, 116, .22);
+  overflow: visible; user-select: none; z-index: 1;
 }
-.tile .face { position: absolute; inset: 8% 9% 10%; width: 82%; height: 82%; }
+.tile::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: calc(var(--d) * -1);
+  border-radius: var(--round);
+  background: linear-gradient(180deg, #e6dcc3 0%, #cfc1a0 36%, #b4a582 70%, #9a8a63 100%);
+  box-shadow: 0 calc(var(--d) * 0.85) calc(var(--d) * 1.5) rgba(0, 0, 0, .5);
+  z-index: -1;
+}
+.tile::after {
+  content: ""; position: absolute; inset: 0; border-radius: var(--round); pointer-events: none; z-index: 3;
+  background: linear-gradient(116deg, rgba(255, 255, 255, .5) 0%, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 74%, rgba(255, 255, 255, .18) 100%);
+}
+.tile .face { position: absolute; inset: 8% 9% 10%; width: 82%; height: 82%; z-index: 2; }
 .tile.honor .face { inset: 7% 10% 9%; width: 80%; height: 84%; }
 .tile.flower .face { inset: 6% 8% 9%; width: 84%; height: 85%; }
+
 .tile.back {
-  background: linear-gradient(150deg, var(--back-1), var(--back-2));
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 255, 255, .08),
-    0 calc(var(--tw) * .1) 0 #063c2b, 0 calc(var(--tw) * .13) 6px rgba(0, 0, 0, .4);
+  background:
+    radial-gradient(130% 90% at 32% 22%, rgba(255, 255, 255, .18), transparent 52%),
+    linear-gradient(150deg, var(--back-1), var(--back-2));
+  box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, .18), inset 0 0 0 1px rgba(255, 255, 255, .06);
 }
-.tile.back::after {
-  content: ""; position: absolute; inset: 15%; border-radius: 50%;
-  background: radial-gradient(circle, rgba(231, 180, 58, .22), transparent 70%);
-  border: 2px solid rgba(231, 180, 58, .25);
+.tile.back::before { background: linear-gradient(180deg, #0c7a57 0%, #086247 42%, #054634 100%); }
+.tile.back .bk {
+  position: absolute; inset: 17%; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 40% 35%, rgba(231, 180, 58, .4), rgba(231, 180, 58, .12) 60%, transparent 72%);
+  border: 2px solid rgba(231, 180, 58, .32); box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
 }
 .tile.small { --tw: 25px; }
 .tile.tiny { --tw: 20px; }
-.tile.last { box-shadow: inset 0 1px 0 #fff, 0 calc(var(--tw) * .11) 0 var(--ivory-shadow), 0 0 0 2px var(--gold), 0 0 14px rgba(231, 180, 58, .7); }
-.tile.wait { box-shadow: inset 0 1px 0 #fff, 0 0 0 2px var(--jade); opacity: .9; }
+.tile.last::before { box-shadow: 0 calc(var(--d) * 0.85) calc(var(--d) * 1.5) rgba(0, 0, 0, .5), 0 0 0 2px var(--gold), 0 0 16px rgba(231, 180, 58, .75); }
+.tile.wait::before { box-shadow: 0 calc(var(--d) * 0.7) calc(var(--d)) rgba(0, 0, 0, .45), 0 0 0 2px var(--jade); }
+.tile.wait { opacity: .92; }
 
-.hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; align-items: flex-end; }
-.hand .tile { --tw: 48px; cursor: pointer; transition: transform .12s cubic-bezier(.2, .8, .3, 1.3); }
-.hand .tile:hover { transform: translateY(-7px); }
-.hand .tile.selected { transform: translateY(-16px); box-shadow: inset 0 1px 0 #fff, 0 5px 0 var(--ivory-shadow), 0 0 0 3px var(--gold), 0 10px 20px rgba(0, 0, 0, .5); }
-.hand .tile.drawn { margin-left: 20px; position: relative; }
-.hand .tile.drawn::before { content: "baru"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 9px; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; font-weight: 700; }
+.hand { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px; align-items: flex-end; perspective: 1000px; }
+.hand .tile {
+  --tw: 48px; --d: calc(var(--tw) * 0.2); cursor: pointer;
+  transform: rotateX(16deg); transform-origin: bottom center;
+  transition: transform .14s cubic-bezier(.2, .8, .3, 1.3), filter .14s;
+}
+.hand .tile:hover { transform: rotateX(7deg) translateY(-9px); filter: brightness(1.04); }
+.hand .tile.selected { transform: rotateX(2deg) translateY(-18px); }
+.hand .tile.selected::before { box-shadow: 0 calc(var(--d) * 0.9) calc(var(--d) * 1.6) rgba(0, 0, 0, .55), 0 0 0 3px var(--gold); }
+.hand .tile.drawn { margin-left: 20px; }
+.hand .tile.drawn .tag {
+  position: absolute; top: calc(var(--d) * -1 - 16px); left: 50%; transform: translateX(-50%);
+  font-size: 9px; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; font-weight: 700; z-index: 4;
+}
 .hand.disabled .tile { cursor: default; }
-.hand.disabled .tile:hover { transform: none; }
+.hand.disabled .tile:hover { transform: rotateX(16deg); filter: none; }
 
 /* ======================= table ======================= */
 #screen-game { display: grid; grid-template-columns: 1fr 272px; height: 100vh; }
@@ -303,10 +332,11 @@ table.fans tr.total td:last-child { color: #fff; }
   60% { opacity: 1; }
   100% { opacity: 1; transform: none; }
 }
-.pile .tile.last { animation: tile-fly .34s cubic-bezier(.2, .75, .3, 1.1), last-glow 1.1s ease-in-out infinite .34s; }
+.pile .tile.last { animation: tile-fly .34s cubic-bezier(.2, .75, .3, 1.1); }
+.pile .tile.last::before { animation: last-glow 1.1s ease-in-out infinite .34s; }
 @keyframes last-glow {
-  0%, 100% { box-shadow: inset 0 1px 0 #fff, 0 calc(var(--tw) * .11) 0 var(--ivory-shadow), 0 0 0 2px var(--gold), 0 0 10px rgba(231, 180, 58, .5); }
-  50% { box-shadow: inset 0 1px 0 #fff, 0 calc(var(--tw) * .11) 0 var(--ivory-shadow), 0 0 0 2px var(--gold), 0 0 20px rgba(231, 180, 58, .95); }
+  0%, 100% { box-shadow: 0 calc(var(--d) * 0.85) calc(var(--d) * 1.5) rgba(0, 0, 0, .5), 0 0 0 2px var(--gold), 0 0 10px rgba(231, 180, 58, .55); }
+  50% { box-shadow: 0 calc(var(--d) * 0.85) calc(var(--d) * 1.5) rgba(0, 0, 0, .5), 0 0 0 2px var(--gold), 0 0 22px rgba(231, 180, 58, .95); }
 }
 
 .meld.meld-pop { animation: meld-pop .4s cubic-bezier(.2, .8, .3, 1.4); }
@@ -323,9 +353,12 @@ table.fans tr.total td:last-child { color: #fff; }
   100% { box-shadow: 0 0 0 1px var(--gold), 0 0 22px rgba(231, 180, 58, .35); }
 }
 
-/* drawn-tile entrance */
-.hand .tile.drawn { animation: draw-in .3s cubic-bezier(.2, .8, .3, 1.3); }
-@keyframes draw-in { from { opacity: 0; transform: translateY(-18px) scale(.8); } }
+/* drawn-tile entrance (preserve the 3D tilt) */
+.hand .tile.drawn { animation: draw-in .32s cubic-bezier(.2, .8, .3, 1.3); }
+@keyframes draw-in {
+  from { opacity: 0; transform: rotateX(16deg) translateY(-20px) scale(.85); }
+  to { opacity: 1; transform: rotateX(16deg); }
+}
 
 /* active-seat "breathing" ring */
 .seat.active { animation: breathe 2.4s ease-in-out infinite; }
