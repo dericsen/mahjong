@@ -85,8 +85,61 @@ function enterRoom(code, t) {
 function connect() {
   if (es) es.close();
   es = new EventSource(`/api/room/${roomCode}/events?token=${encodeURIComponent(token)}`);
-  es.addEventListener('state', (ev) => { state = JSON.parse(ev.data); render(); });
+  es.addEventListener('state', (ev) => {
+    const next = JSON.parse(ev.data);
+    const prev = state;
+    state = next;
+    render();
+    reactToState(prev, next);
+  });
   es.onerror = () => { /* EventSource reconnects automatically */ };
+}
+
+/* Diff two game states and trigger sounds / effects for what changed. */
+let fxSeen = { melds: null, discardKey: null, phase: null, resultShown: false, myTurn: false, logLen: 0, flowerCount: 0 };
+function reactToState(prev, next) {
+  const g = next.game;
+  if (!g) { fxSeen.resultShown = false; return; }
+  const meldCount = g.players.reduce((a, p) => a + p.melds.length, 0);
+  const discardKey = g.players.map((p) => p.discards.length).join(',');
+  const flowerCount = g.players.reduce((a, p) => a + p.flowers.length, 0);
+
+  // new discard somewhere
+  if (fxSeen.discardKey !== null && discardKey !== fxSeen.discardKey) FX.play('discard');
+  // a flower was drawn/replaced
+  if (fxSeen.flowerCount && flowerCount > fxSeen.flowerCount) FX.play('flower');
+  // a new meld (pung/chow/kong) formed
+  if (fxSeen.melds !== null && meldCount > fxSeen.melds) {
+    const kong = g.players.some((p) => p.melds.some((m) => m.type === 'kong'));
+    FX.play(kong && meldCount - fxSeen.melds >= 1 ? 'kong' : 'claim');
+    pulseMeld();
+  }
+  // it just became my turn (and it wasn't before)
+  const myTurn = g.phase === 'turn' && g.current === g.you && g.you >= 0;
+  if (myTurn && !fxSeen.myTurn && prev && prev.game) { FX.play('yourturn'); flashTurn(); }
+  // result just appeared
+  if (g.phase === 'ended' && g.result && !fxSeen.resultShown) {
+    fxSeen.resultShown = true;
+    if (g.result.type === 'win') {
+      const iWon = g.result.winner === g.you;
+      FX.play(iWon ? 'win' : 'lose');
+      if (g.result.winner === g.you || g.you < 0) FX.confetti();
+      else FX.confetti(1400);
+    } else FX.play('lose');
+  }
+  if (g.phase !== 'ended') fxSeen.resultShown = false;
+
+  fxSeen = { ...fxSeen, melds: meldCount, discardKey, phase: g.phase, myTurn, flowerCount };
+}
+
+function flashTurn() {
+  const b = $('.seat-bottom');
+  if (!b) return;
+  b.classList.remove('turn-flash'); void b.offsetWidth; b.classList.add('turn-flash');
+}
+function pulseMeld() {
+  const last = document.querySelector('.seat .meld:last-child');
+  if (last) { last.classList.remove('meld-pop'); void last.offsetWidth; last.classList.add('meld-pop'); }
 }
 
 async function act(action) {
@@ -222,7 +275,7 @@ function renderGame(g) {
     te.onclick = () => {
       if (!canDiscard) return;
       if (selectedTile === id) act({ type: 'discard', tile: t });
-      else { selectedTile = id; renderGame(g); }
+      else { selectedTile = id; FX.play('select'); renderGame(g); }
     };
     te.ondblclick = () => canDiscard && act({ type: 'discard', tile: t });
     handBox.appendChild(te);
@@ -362,6 +415,12 @@ function startTimer(deadline) {
   tick();
   if (deadline) timerHandle = setInterval(tick, 500);
 }
+
+/* ---------------- mute toggle ---------------- */
+const muteBtn = $('#btn-mute');
+function syncMute() { muteBtn.textContent = FX.isMuted() ? '🔇' : '🔊'; muteBtn.classList.toggle('off', FX.isMuted()); }
+muteBtn.onclick = () => { FX.ensure(); FX.setMuted(!FX.isMuted()); syncMute(); };
+syncMute();
 
 /* ---------------- boot ---------------- */
 (function boot() {
