@@ -134,8 +134,9 @@ button.win {
     0 calc(var(--tw) * .14) 7px rgba(0, 0, 0, .4);
   overflow: hidden; user-select: none;
 }
-.tile .face { position: absolute; inset: 7% 9% 11%; width: 82%; height: 82%; }
-.tile.honor .face, .tile.flower .face { inset: 6% 8% 9%; width: 84%; height: 85%; }
+.tile .face { position: absolute; inset: 8% 9% 10%; width: 82%; height: 82%; }
+.tile.honor .face { inset: 7% 10% 9%; width: 80%; height: 84%; }
+.tile.flower .face { inset: 6% 8% 9%; width: 84%; height: 85%; }
 .tile.back {
   background: linear-gradient(150deg, var(--back-1), var(--back-2));
   box-shadow:

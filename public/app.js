@@ -25,7 +25,8 @@ function tileEl(k, extra = '') {
   else if (k < 27) t.classList.add('suit-b');
   else if (k < 34) t.classList.add('honor');
   else t.classList.add('flower');
-  t.innerHTML = `<svg class="face" viewBox="0 0 60 84" aria-hidden="true">${window.MJ_TILE_ART(k)}</svg>`;
+  const face = window.MJ_TILE_FACE(k);
+  t.innerHTML = `<svg class="face" viewBox="${face.vb}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${face.body}</svg>`;
   return t;
 }
 
@@ -425,7 +426,7 @@ syncMute();
 /* ---------------- boot ---------------- */
 (function boot() {
   const logo = $('#logo-tile');
-  if (logo) logo.innerHTML = window.MJ_TILE_ART(4); // 5 of characters as the brand mark
+  if (logo) { const f = window.MJ_TILE_FACE(4); logo.setAttribute('viewBox', f.vb); logo.innerHTML = f.body; } // 5 of characters as the brand mark
   const params = new URLSearchParams(location.search);
   const code = (params.get('room') || '').toUpperCase();
   if (!code) return show('home');

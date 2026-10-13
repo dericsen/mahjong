@@ -128,8 +128,8 @@ function flower(k) {
     `<text x="30" y="74" font-size="16" font-weight="800" text-anchor="middle" fill="#fff" font-family="Sora,system-ui,sans-serif">${n}</text>`;
 }
 
-/* ---- dispatcher ---- */
-function tileArt(k) {
+/* ---- fallback dispatcher (hand-drawn), used if baked art is unavailable ---- */
+function fallbackArt(k) {
   if (k < 9) return characters(k + 1);
   if (k < 18) return dots(k - 9 + 1);
   if (k < 27) return bamboos(k - 18 + 1);
@@ -146,4 +146,14 @@ function tileArt(k) {
   return flower(k);
 }
 
-window.MJ_TILE_ART = tileArt;
+/* Returns { vb, body } for an inline <svg>. Suited + honor tiles use the baked
+   high-quality artwork; flowers/seasons use the hand-drawn fallback. */
+function tileFace(k) {
+  const baked = window.MJ_TILE_DATA;
+  if (k < 34 && baked && baked[k]) return baked[k];
+  return { vb: '0 0 60 84', body: fallbackArt(k) };
+}
+
+// kept for backward compat (returns inner markup on the 60x84 fallback box)
+window.MJ_TILE_ART = fallbackArt;
+window.MJ_TILE_FACE = tileFace;
